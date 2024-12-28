@@ -1,5 +1,5 @@
-module github.com/fixme_my_friend/hw01_hello_otus
+module github.com/Maximilyanus29/golang-home-work/tree/hw01_hello_otus
 
 go 1.22
 
-require golang.org/x/example/hello v0.0.0-20241014184706-d7b0ac127859 // indirect
+require golang.org/x/example/hello v0.0.0-20241014184706-d7b0ac127859
