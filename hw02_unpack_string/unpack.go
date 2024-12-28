@@ -12,7 +12,7 @@ func Unpack(input string) (string, error) {
 	if input == "" {
 		return "", nil
 	}
-	input = `qwe\\5`
+	// input = "aaa10b"
 	// var escapedRune rune
 
 	var result string
@@ -27,13 +27,14 @@ func Unpack(input string) (string, error) {
 		r := runes[i]
 		count := 1
 
+		if isDigitRune(r) {
+			return "", ErrInvalidString
+		}
+
 		if i+1 < len(runes) {
 			r2 := runes[i+1]
 
 			if isDigitRune(r2) {
-				if isDigitRune(r) {
-					return "", ErrInvalidString
-				}
 
 				if r == '\\' {
 					if i+2 < len(runes) {
