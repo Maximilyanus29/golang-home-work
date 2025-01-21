@@ -16,59 +16,73 @@ func Unpack(input string) (string, error) {
 	lastIndex := getLastIndexOnInput(input)
 	result := strings.Builder{}
 	var oldRune rune
-
 	escapeMode := false
 
 	for index, currentRune := range input {
-		isDigitCurrentRune := isDigitRune(currentRune)
-		isLastIndex := index == lastIndex
-
-		if index == 0 {
-			if isDigitCurrentRune {
-				return "", ErrInvalidString
-			}
-			oldRune = currentRune
-			continue
+		if err := processRune(index, currentRune, &oldRune, &result, &escapeMode, lastIndex); err != nil {
+			return "", err
 		}
+	}
 
-		isDigitOldRune := isDigitRune(oldRune)
+	return result.String(), nil
+}
 
-		if oldRune == '\\' && isDigitCurrentRune {
-			escapeMode = true
-			oldRune = currentRune
-			continue
-		}
+func processRune(
+	index int,
+	currentRune rune,
+	oldRune *rune,
+	result *strings.Builder,
+	escapeMode *bool,
+	lastIndex int,
+) error {
+	isDigitCurrentRune := isDigitRune(currentRune)
+	isLastIndex := index == lastIndex
 
-		if isDigitCurrentRune && isDigitOldRune && !escapeMode {
-			return "", ErrInvalidString
-		}
-
-		if !escapeMode {
-			if isDigitRune(oldRune) {
-				if isLastIndex {
-					result.WriteRune(currentRune)
-				}
-				oldRune = currentRune
-				continue
-			}
-		}
-
+	if index == 0 {
 		if isDigitCurrentRune {
-			if count, err := strconv.Atoi(string(currentRune)); err == nil {
-				result.WriteString(strings.Repeat(string(oldRune), count))
-			} else {
-				return "", ErrInvalidString
-			}
-		} else {
-			result.WriteRune(oldRune)
+			return ErrInvalidString
+		}
+		*oldRune = currentRune
+		return nil
+	}
 
+	isDigitOldRune := isDigitRune(*oldRune)
+
+	if *oldRune == '\\' && isDigitCurrentRune {
+		*escapeMode = true
+		*oldRune = currentRune
+		return nil
+	}
+
+	if isDigitCurrentRune && isDigitOldRune && !*escapeMode {
+		return ErrInvalidString
+	}
+
+	if !*escapeMode {
+		if isDigitRune(*oldRune) {
 			if isLastIndex {
 				result.WriteRune(currentRune)
 			}
+			*oldRune = currentRune
+			return nil
 		}
-		oldRune = currentRune
 	}
-	return result.String(), nil
+
+	if isDigitCurrentRune {
+		if count, err := strconv.Atoi(string(currentRune)); err == nil {
+			result.WriteString(strings.Repeat(string(*oldRune), count))
+		} else {
+			return ErrInvalidString
+		}
+	} else {
+		result.WriteRune(*oldRune)
+
+		if isLastIndex {
+			result.WriteRune(currentRune)
+		}
+	}
+	*oldRune = currentRune
+	return nil
 }
 
 func isDigitRune(v rune) bool {
