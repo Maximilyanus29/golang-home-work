@@ -16,11 +16,8 @@ func TestUnpack(t *testing.T) {
 		{input: "abccd", expected: "abccd"},
 		{input: "", expected: ""},
 		{input: "aaa0b", expected: "aab"},
-		// uncomment if task with asterisk completed
-		// {input: `qwe\4\5`, expected: `qwe45`},
-		// {input: `qwe\45`, expected: `qwe44444`},
-		// {input: `qwe\\5`, expected: `qwe\\\\\`},
-		// {input: `qwe\\\3`, expected: `qwe\3`},
+		{input: "d\n5abc", expected: "d\n\n\n\n\nabc"},
+		{input: `qwe\45`, expected: `qwe44444`},
 	}
 
 	for _, tc := range tests {
@@ -40,6 +37,44 @@ func TestUnpackInvalidString(t *testing.T) {
 		t.Run(tc, func(t *testing.T) {
 			_, err := Unpack(tc)
 			require.Truef(t, errors.Is(err, ErrInvalidString), "actual error %q", err)
+		})
+	}
+}
+
+func TestUnpackRussionSymbols(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{input: "при5вет", expected: "прииииивет"},
+		{input: "", expected: ""},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.input, func(t *testing.T) {
+			result, err := Unpack(tc.input)
+			require.NoError(t, err)
+			require.Equal(t, tc.expected, result)
+		})
+	}
+}
+
+func TestUnpackSmiles(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{input: "😀4😄", expected: "😀😀😀😀😄"},
+		{input: "😀5", expected: "😀😀😀😀😀"},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.input, func(t *testing.T) {
+			result, err := Unpack(tc.input)
+			require.NoError(t, err)
+			require.Equal(t, tc.expected, result)
 		})
 	}
 }
