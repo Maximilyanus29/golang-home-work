@@ -17,23 +17,29 @@ func Top10(input string) []string {
 		return result
 	}
 
-	escapeSymbols := []rune{'\t', '\n', '\v', '\f', '\r', ' '}
+	escapeSymbols := []rune{'\t', '\n', '\v', '\f', '\r', ' ', 0}
 
 	stringBuilder := &strings.Builder{}
 
 	wordsCount := make(map[string]int)
 
 	for _, v := range input {
-
 		if slices.Contains(escapeSymbols, v) {
 			word := stringBuilder.String()
+			if word == "-" {
+				stringBuilder.Reset()
+				continue
+			}
 
-			wordCount, ok := wordsCount[word]
+			lowerString := strings.ToLower(word)
+			lowerTrimString := strings.Trim(lowerString, "!,'\"\\.")
+
+			wordCount, ok := wordsCount[lowerTrimString]
 
 			if ok {
-				wordsCount[word] = wordCount + 1
+				wordsCount[lowerTrimString] = wordCount + 1
 			} else {
-				wordsCount[word] = 1
+				wordsCount[lowerTrimString] = 1
 			}
 
 			stringBuilder.Reset()
@@ -51,7 +57,6 @@ func Top10(input string) []string {
 }
 
 func sortMap(inputMap map[string]int) []Pair {
-
 	pairs := make([]Pair, 0, len(inputMap))
 	for key, value := range inputMap {
 		pairs = append(pairs, Pair{Key: key, Value: value})
