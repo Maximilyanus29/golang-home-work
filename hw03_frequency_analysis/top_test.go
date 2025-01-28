@@ -3,7 +3,7 @@ package hw03frequencyanalysis
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require" //nolint
+	"github.com/stretchr/testify/require"
 )
 
 // Change to true if needed.
@@ -78,5 +78,13 @@ func TestTop10(t *testing.T) {
 			}
 			require.Equal(t, expected, Top10(text))
 		}
+	})
+}
+
+var text2 = "Как бант видите, он как бант  спускается бант "
+
+func TestLessThen10(t *testing.T) {
+	t.Run("wordsCount in small string", func(t *testing.T) {
+		require.Len(t, Top10(text2), 5)
 	})
 }

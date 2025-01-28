@@ -1,7 +1,6 @@
 package hw03frequencyanalysis
 
 import (
-	"slices"
 	"sort"
 	"strings"
 )
@@ -17,43 +16,35 @@ func Top10(input string) []string {
 		return result
 	}
 
-	escapeSymbols := []rune{'\t', '\n', '\v', '\f', '\r', ' ', 0}
-
 	stringBuilder := &strings.Builder{}
 
 	wordsCount := make(map[string]int)
 
-	for _, v := range input {
-		if slices.Contains(escapeSymbols, v) {
-			word := stringBuilder.String()
-			if word == "-" {
-				stringBuilder.Reset()
-				continue
-			}
+	words := strings.Fields(input)
 
-			lowerString := strings.ToLower(word)
-			lowerTrimString := strings.Trim(lowerString, "!,'\"\\.")
-
-			wordCount, ok := wordsCount[lowerTrimString]
-
-			if ok {
-				wordsCount[lowerTrimString] = wordCount + 1
-			} else {
-				wordsCount[lowerTrimString] = 1
-			}
-
+	for _, word := range words {
+		if word == "-" {
 			stringBuilder.Reset()
 			continue
 		}
 
-		stringBuilder.WriteRune(v)
+		lowerString := strings.ToLower(word)
+		lowerTrimString := strings.Trim(lowerString, "!,'\"\\.")
+
+		wordsCount[lowerTrimString]++
 	}
 
-	sortedMap := sortMap(wordsCount)
+	wordsCountSortedDesc := sortMap(wordsCount)
 
-	keysFromSlicePairs := getKeysFromSlicePairs(sortedMap)
+	keysFromSlicePairs := getKeysFromSlicePairs(wordsCountSortedDesc)
 
-	return keysFromSlicePairs[1:11]
+	keysFromSlicePairsLen := len(keysFromSlicePairs)
+
+	if keysFromSlicePairsLen > 10 {
+		keysFromSlicePairsLen = 10
+	}
+
+	return keysFromSlicePairs[0:keysFromSlicePairsLen]
 }
 
 func sortMap(inputMap map[string]int) []Pair {
