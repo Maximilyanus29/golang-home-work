@@ -9,29 +9,21 @@ var ErrErrorsLimitExceeded = errors.New("errors limit exceeded")
 
 type Task func() error
 
-// Run starts tasks in n goroutines and stops its work when receiving m errors from tasks.
 func Run(tasks []Task, n, m int) error {
 	if m <= 0 {
 		m = len(tasks) + 1
 	}
 
 	taskChan := make(chan Task)
-	quitChan := make(chan struct{})
+	quitChan := make(chan struct{}, 1)
 
 	var wg sync.WaitGroup
 	var mu sync.Mutex
+	var quitOnce sync.Once
 
 	var errCount int
 
-	go func() {
-		if errCount >= m {
-			close(quitChan)
-			return
-		}
-	}()
-
-	// Запускаем n воркеров
-	for i := 0; i < n; i++ {
+	for range n {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -47,8 +39,14 @@ func Run(tasks []Task, n, m int) error {
 					if err := task(); err != nil {
 						mu.Lock()
 						errCount++
+						if errCount >= m {
+							mu.Unlock()
+							quitOnce.Do(func() {
+								close(quitChan)
+							})
+							return
+						}
 						mu.Unlock()
-
 					}
 				}
 			}
