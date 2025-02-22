@@ -8,6 +8,7 @@ type List interface {
 	PushBack(v interface{}) *ListItem
 	Remove(i *ListItem)
 	MoveToFront(i *ListItem)
+	Clear()
 }
 
 type ListItem struct {
@@ -25,12 +26,15 @@ type list struct {
 func (l *list) Len() int {
 	return l.len
 }
+
 func (l *list) Front() *ListItem {
 	return l.head
 }
+
 func (l *list) Back() *ListItem {
 	return l.tail
 }
+
 func (l *list) PushFront(v interface{}) *ListItem {
 	newItem := &ListItem{v, nil, nil}
 	current := l.Front()
@@ -49,6 +53,7 @@ func (l *list) PushFront(v interface{}) *ListItem {
 	l.len++
 	return newItem
 }
+
 func (l *list) PushBack(v interface{}) *ListItem {
 	newItem := &ListItem{v, nil, nil}
 	current := l.Back()
@@ -90,28 +95,30 @@ func (l *list) Remove(i *ListItem) {
 
 func (l *list) MoveToFront(i *ListItem) {
 	current := l.Front()
-	current.Prev = i
-
 	if current != i {
+		// Удаляем элемент i из текущего положения
 		if i.Prev != nil {
-			if i.Next != nil {
-				i.Prev.Next = i.Next.Prev
-			} else {
-				i.Prev.Next = nil
-			}
+			i.Prev.Next = i.Next
 		}
-
 		if i.Next != nil {
-			if i.Prev != nil {
-				i.Next.Prev = i.Prev.Next
-			} else {
-				i.Next.Prev = nil
-			}
+			i.Next.Prev = i.Prev
 		}
 
+		// Перемещаем элемент i в начало списка
 		i.Prev = nil
 		i.Next = current
+		if current != nil {
+			current.Prev = i
+		}
 		l.head = i
+	}
+}
+
+func (l *list) Clear() {
+	for i := l.Front(); i != nil; i = i.Next {
+		i.Prev = nil
+		i.Next = nil
+		i = nil
 	}
 }
 

@@ -32,12 +32,10 @@ func (c lruCache) Set(key Key, value interface{}) bool {
 		newListItem := c.queue.PushFront(&lruItem{key, value})
 
 		c.items[key] = newListItem
-	} else {
-		if listItem != nil {
-			item := listItem.Value.(*lruItem)
-			item.value = value
-			c.queue.MoveToFront(listItem)
-		}
+	} else if listItem != nil {
+		item := listItem.Value.(*lruItem)
+		item.value = value
+		c.queue.MoveToFront(listItem)
 	}
 
 	return ok
@@ -54,9 +52,11 @@ func (c lruCache) Get(key Key) (interface{}, bool) {
 	return nil, false
 }
 
-func (c lruCache) Clear() {
-	c.items = make(map[Key]*ListItem, c.capacity)
-	c.queue = NewList()
+func (c *lruCache) Clear() {
+	for key := range c.items {
+		delete(c.items, key)
+	}
+	c.queue.Clear() // Предположим, что у вас есть метод Clear для списка
 }
 
 func NewCache(capacity int) Cache {
