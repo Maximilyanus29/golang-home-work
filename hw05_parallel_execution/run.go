@@ -3,6 +3,7 @@ package hw05parallelexecution
 import (
 	"errors"
 	"sync"
+	"sync/atomic"
 )
 
 var ErrErrorsLimitExceeded = errors.New("errors limit exceeded")
@@ -11,58 +12,52 @@ type Task func() error
 
 func Run(tasks []Task, n, m int) error {
 	if m <= 0 {
-		m = len(tasks) + 1
+		return ErrErrorsLimitExceeded
+	}
+
+	lenTask := len(tasks)
+	if lenTask < n {
+		n = lenTask
 	}
 
 	taskChan := make(chan Task)
-	quitChan := make(chan struct{}, 1)
+	// quitChan := make(chan struct{}, 1)
 
 	var wg sync.WaitGroup
-	var mu sync.Mutex
-	var quitOnce sync.Once
+	// var once sync.Once
 
-	var errCount int
+	var errCount int32
+	// var shutdown int32
 
-	for range n {
+	// runGourutines := 0
+
+	for i := 0; i < n; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-
-			for {
-				select {
-				case <-quitChan:
+			for task := range taskChan {
+				if atomic.LoadInt32(&errCount) >= int32(m) { //nolint
 					return
-				case task, ok := <-taskChan:
-					if !ok {
-						return
-					}
-					if err := task(); err != nil {
-						mu.Lock()
-						errCount++
-						if errCount >= m {
-							mu.Unlock()
-							quitOnce.Do(func() {
-								close(quitChan)
-							})
-							return
-						}
-						mu.Unlock()
-					}
+				}
+				if err := task(); err != nil {
+					atomic.AddInt32(&errCount, 1)
 				}
 			}
 		}()
 	}
 
 	for _, task := range tasks {
+		if atomic.LoadInt32(&errCount) >= int32(m) { //nolint
+			break
+		}
 		taskChan <- task
 	}
 	close(taskChan)
 
 	wg.Wait()
 
-	if errCount >= m {
+	if atomic.LoadInt32(&errCount) >= int32(m) { //nolint
 		return ErrErrorsLimitExceeded
 	}
 	return nil
-
 }
