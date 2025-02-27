@@ -4,6 +4,7 @@ run:
     - bench
     - !bench
 
+# golangci-lint config
 linters-settings:
   funlen:
     lines: 150
