@@ -4,6 +4,7 @@ run:
     - bench
     - !bench
 
+# golangci-lint config
 linters-settings:
   funlen:
     lines: 150
@@ -20,7 +21,6 @@ linters-settings:
         deny:
           - pkg: io/ioutil
             desc: "replaced by io and os packages since Go 1.16: https://tip.golang.org/doc/go1.16#ioutil"
-
 
 issues:
   exclude-rules:
