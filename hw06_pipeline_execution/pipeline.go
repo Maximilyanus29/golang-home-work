@@ -1,5 +1,7 @@
 package hw06pipelineexecution
 
+import "sync"
+
 type (
 	In  = <-chan interface{}
 	Out = In
@@ -9,30 +11,74 @@ type (
 type Stage func(in In) (out Out)
 
 func ExecutePipeline(in In, done In, stages ...Stage) Out {
-	current := in
+	if len(stages) == 0 {
+		return nil
+	}
+	var wg sync.WaitGroup
+	var cur Out
+	cur = in
 
-	for _, stage := range stages {
-		out := make(Bi)
-
-		go func(in In, out Bi, stage Stage, done In) {
-			defer close(out)
-			res := stage(in)
-
-			for {
-				select {
-				case <-done:
-					return
-				case resValue, ok := <-res:
-					if !ok {
-						return
-					}
-					out <- resValue
+	go func() {
+		for {
+			_, ok := <-done
+			if !ok {
+				for range in { //nolint
 				}
-			}
-		}(current, out, stage, done)
 
-		current = out
+				return
+			}
+		}
+	}()
+
+	if done != nil {
+		_, ok := <-done
+		if !ok {
+			for range in { //nolint
+			}
+
+			return cur
+		}
 	}
 
-	return Out(current)
+	for _, stage := range stages {
+		cur = stage(createWrapForStageValue(cur, done, &wg))
+	}
+
+	wg.Wait()
+
+	return cur
+}
+
+func createWrapForStageValue(in In, done In, wg *sync.WaitGroup) Out {
+	out := make(Bi)
+
+	if done == nil {
+		return in
+	}
+
+	wg.Add(1)
+	go func(in In, out Bi, done In) {
+		defer func() {
+			wg.Done()
+			close(out)
+		}()
+
+		for {
+			select {
+			case <-done:
+				for range in { //nolint
+				}
+
+				return
+			case invalue, ok := <-in:
+				if !ok {
+					return
+				}
+
+				out <- invalue
+			}
+		}
+	}(in, out, done)
+
+	return Out(out)
 }
