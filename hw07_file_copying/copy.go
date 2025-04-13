@@ -5,6 +5,8 @@ import (
 	"io"
 	"log"
 	"os"
+
+	"github.com/cheggaaa/pb/v3"
 )
 
 var (
@@ -43,8 +45,14 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 		size = limit
 	}
 
-	N := int(size) + int(offset) // мы заранее знаем сколько хотим прочитать
-	buf := make([]byte, N)       // подготавливаем буфер нужного размера
+	if offset > 0 {
+		file.Seek(offset, io.SeekStart)
+	}
+	// N := int(size) + int(offset) // мы заранее знаем сколько хотим прочитать
+	N := int(size)
+	// create and start new bar
+	bar := pb.StartNew(N)
+	buf := make([]byte, N) // подготавливаем буфер нужного размера
 
 	file2, err2 := os.Create(toPath) // открываем файл (не забыть про err!)
 	if err2 != nil {
@@ -56,6 +64,9 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	for offsetT < N {
 		read, err := file.Read(buf[offsetT:])
 		offsetT += read
+		for range read {
+			bar.Increment()
+		}
 
 		if err == io.EOF {
 			break
@@ -65,7 +76,14 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 		}
 	}
 
-	_, err3 := file2.Write(buf[offset:offsetT])
+	for range int(size) - offsetT {
+		bar.Increment()
+	}
+
+	_, err3 := file2.Write(buf[:offsetT])
+
+	// finish bar
+	bar.Finish()
 
 	if err3 != nil {
 		log.Panicf("failed to write: %v", err3)
