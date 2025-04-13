@@ -18,5 +18,11 @@ func init() {
 
 func main() {
 	flag.Parse()
-	// Place your code here.
+	if from == to {
+		print("'from' and 'to' must be difference")
+	}
+	err := Copy(from, to, offset, limit)
+	if err != nil {
+		print(err)
+	}
 }
