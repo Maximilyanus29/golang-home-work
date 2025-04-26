@@ -9,12 +9,13 @@ import (
 	"strings"
 )
 
-// ValidationError представляет ошибку валидации для конкретного поля
+// ValidationError представляет ошибку валидации для конкретного поля.
 type ValidationError struct {
 	Field string
 	Err   error
 }
 
+// ValidationErrors представляет список ошибок валидации.
 type ValidationErrors []ValidationError
 
 func (v ValidationErrors) Error() string {
@@ -32,6 +33,7 @@ var (
 	ErrInvalidValidation = errors.New("invalid validation rule")
 )
 
+// Validate проверяет структуру согласно тегам validate.
 func Validate(v interface{}) error {
 	value := reflect.ValueOf(v)
 	if value.Kind() != reflect.Struct {
@@ -45,49 +47,20 @@ func Validate(v interface{}) error {
 		field := typ.Field(i)
 		fieldValue := value.Field(i)
 
+		if !field.IsExported() {
+			continue
+		}
+
 		tag, ok := field.Tag.Lookup("validate")
 		if !ok {
 			continue
 		}
 
-		if tag == "nested" {
-			if fieldValue.Kind() == reflect.Struct {
-				if nestedErr := Validate(fieldValue.Interface()); nestedErr != nil {
-					var nestedValidationErrs ValidationErrors
-					if errors.As(nestedErr, &nestedValidationErrs) {
-						for _, nestedErr := range nestedValidationErrs {
-							nestedErr.Field = field.Name + "." + nestedErr.Field
-							errs = append(errs, nestedErr)
-						}
-					} else {
-						return nestedErr
-					}
-				}
-			}
-			continue
-		}
-
-		if fieldValue.Kind() == reflect.Slice {
-			for j := 0; j < fieldValue.Len(); j++ {
-				element := fieldValue.Index(j)
-				if err := validateField(field.Name, element, tag); err != nil {
-					if validationErrs, ok := err.(ValidationErrors); ok {
-						for _, validationErr := range validationErrs {
-							validationErr.Field = fmt.Sprintf("%s[%d]", field.Name, j)
-							errs = append(errs, validationErr)
-						}
-					} else {
-						return err
-					}
-				}
-			}
-		} else {
-			if err := validateField(field.Name, fieldValue, tag); err != nil {
-				if validationErrs, ok := err.(ValidationErrors); ok {
-					errs = append(errs, validationErrs...)
-				} else {
-					return err
-				}
+		if err := validateField(field, fieldValue, tag); err != nil {
+			if validationErrs, ok := err.(ValidationErrors); ok { //nolint:errorlint
+				errs = append(errs, validationErrs...)
+			} else {
+				return err
 			}
 		}
 	}
@@ -98,7 +71,59 @@ func Validate(v interface{}) error {
 	return nil
 }
 
-func validateField(fieldName string, value reflect.Value, tag string) error {
+func validateField(field reflect.StructField, value reflect.Value, tag string) error {
+	if tag == "nested" {
+		return validateNestedField(field, value)
+	}
+
+	if value.Kind() == reflect.Slice {
+		return validateSliceField(field, value, tag)
+	}
+
+	return validateSingleField(field.Name, value, tag)
+}
+
+func validateNestedField(field reflect.StructField, value reflect.Value) error {
+	if value.Kind() != reflect.Struct {
+		return nil
+	}
+
+	if nestedErr := Validate(value.Interface()); nestedErr != nil {
+		var nestedValidationErrs ValidationErrors
+		if errors.As(nestedErr, &nestedValidationErrs) {
+			for _, nestedErr := range nestedValidationErrs {
+				nestedErr.Field = field.Name + "." + nestedErr.Field
+			}
+			return nestedValidationErrs
+		}
+		return nestedErr
+	}
+	return nil
+}
+
+func validateSliceField(field reflect.StructField, value reflect.Value, tag string) error {
+	var errs ValidationErrors
+	for j := 0; j < value.Len(); j++ {
+		element := value.Index(j)
+		if err := validateSingleField(field.Name, element, tag); err != nil {
+			if validationErrs, ok := err.(ValidationErrors); ok { //nolint:errorlint
+				for _, validationErr := range validationErrs {
+					validationErr.Field = fmt.Sprintf("%s[%d]", field.Name, j)
+					errs = append(errs, validationErr)
+				}
+			} else {
+				return err
+			}
+		}
+	}
+
+	if len(errs) > 0 {
+		return errs
+	}
+	return nil
+}
+
+func validateSingleField(fieldName string, value reflect.Value, tag string) error {
 	var errs ValidationErrors
 	rules := strings.Split(tag, "|")
 
@@ -112,7 +137,7 @@ func validateField(fieldName string, value reflect.Value, tag string) error {
 		validatorValue := parts[1]
 
 		var err error
-		switch value.Kind() {
+		switch value.Kind() { //nolint:exhaustive
 		case reflect.String:
 			err = validateString(value.String(), validatorName, validatorValue)
 		case reflect.Int:
@@ -141,11 +166,11 @@ func validateField(fieldName string, value reflect.Value, tag string) error {
 func validateString(value, validatorName, validatorValue string) error {
 	switch validatorName {
 	case "len":
-		expectedLen, err := strconv.Atoi(validatorValue)
+		expectedLength, err := strconv.Atoi(validatorValue)
 		if err != nil {
 			return ErrInvalidValidator
 		}
-		if len(value) != expectedLen {
+		if len(value) != expectedLength {
 			return ErrInvalidValidation
 		}
 	case "regexp":
@@ -177,19 +202,19 @@ func validateString(value, validatorName, validatorValue string) error {
 func validateInt(value int, validatorName, validatorValue string) error {
 	switch validatorName {
 	case "min":
-		min, err := strconv.Atoi(validatorValue)
+		minValue, err := strconv.Atoi(validatorValue)
 		if err != nil {
 			return ErrInvalidValidator
 		}
-		if value < min {
+		if value < minValue {
 			return ErrInvalidValidation
 		}
 	case "max":
-		max, err := strconv.Atoi(validatorValue)
+		maxValue, err := strconv.Atoi(validatorValue)
 		if err != nil {
 			return ErrInvalidValidator
 		}
-		if value > max {
+		if value > maxValue {
 			return ErrInvalidValidation
 		}
 	case "in":
