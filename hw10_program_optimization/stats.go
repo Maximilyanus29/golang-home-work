@@ -1,66 +1,57 @@
 package hw10programoptimization
 
 import (
-	"encoding/json"
-	"fmt"
+	"bufio"
+	"bytes"
 	"io"
-	"regexp"
 	"strings"
 )
-
-type User struct {
-	ID       int
-	Name     string
-	Username string
-	Email    string
-	Phone    string
-	Password string
-	Address  string
-}
 
 type DomainStat map[string]int
 
 func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
-	u, err := getUsers(r)
-	if err != nil {
-		return nil, fmt.Errorf("get users error: %w", err)
-	}
-	return countDomains(u, domain)
-}
-
-type users [100_000]User
-
-func getUsers(r io.Reader) (result users, err error) {
-	content, err := io.ReadAll(r)
-	if err != nil {
-		return
-	}
-
-	lines := strings.Split(string(content), "\n")
-	for i, line := range lines {
-		var user User
-		if err = json.Unmarshal([]byte(line), &user); err != nil {
-			return
-		}
-		result[i] = user
-	}
-	return
-}
-
-func countDomains(u users, domain string) (DomainStat, error) {
+	domain = strings.ToLower(domain)
 	result := make(DomainStat)
+	scanner := bufio.NewScanner(r)
 
-	for _, user := range u {
-		matched, err := regexp.Match("\\."+domain, []byte(user.Email))
-		if err != nil {
-			return nil, err
+	for scanner.Scan() {
+		email := extractEmail(scanner.Bytes())
+		if email == "" {
+			continue
 		}
 
-		if matched {
-			num := result[strings.ToLower(strings.SplitN(user.Email, "@", 2)[1])]
-			num++
-			result[strings.ToLower(strings.SplitN(user.Email, "@", 2)[1])] = num
+		domainPart := getDomainPart(email)
+		if strings.HasSuffix(domainPart, "."+domain) {
+			result[domainPart]++
 		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
 	}
 	return result, nil
+}
+
+func extractEmail(line []byte) string {
+	key := []byte(`"Email":"`)
+	start := bytes.Index(line, key)
+	if start == -1 {
+		return ""
+	}
+
+	start += len(key)
+	end := bytes.IndexByte(line[start:], '"')
+	if end == -1 {
+		return ""
+	}
+
+	return string(line[start : start+end])
+}
+
+func getDomainPart(email string) string {
+	at := strings.LastIndexByte(email, '@')
+	if at == -1 {
+		return ""
+	}
+	return strings.ToLower(email[at+1:])
 }
