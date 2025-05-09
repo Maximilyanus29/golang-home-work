@@ -2,56 +2,62 @@ package hw10programoptimization
 
 import (
 	"bufio"
-	"bytes"
+	"fmt"
 	"io"
 	"strings"
+
+	jsoniter "github.com/json-iterator/go"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
+
+type User struct {
+	Email string
+}
 
 type DomainStat map[string]int
 
 func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
-	domain = strings.ToLower(domain)
-	result := make(DomainStat)
+	u, err := getUsers(r)
+	if err != nil {
+		return nil, fmt.Errorf("get users error: %w", err)
+	}
+	return countDomains(u, domain)
+}
+
+type users []User
+
+func getUsers(r io.Reader) (users, error) {
+	result := make([]User, 0, 100_000)
 	scanner := bufio.NewScanner(r)
 
+	i := 0
 	for scanner.Scan() {
-		email := extractEmail(scanner.Bytes())
-		if email == "" {
-			continue
+		var user User
+		if err := json.Unmarshal(scanner.Bytes(), &user); err != nil {
+			return nil, err
 		}
-
-		domainPart := getDomainPart(email)
-		if strings.HasSuffix(domainPart, "."+domain) {
-			result[domainPart]++
-		}
+		result = append(result, user)
+		i++
 	}
 
 	if err := scanner.Err(); err != nil {
 		return nil, err
 	}
+
 	return result, nil
 }
 
-func extractEmail(line []byte) string {
-	key := []byte(`"Email":"`)
-	start := bytes.Index(line, key)
-	if start == -1 {
-		return ""
-	}
+func countDomains(u users, domain string) (DomainStat, error) {
+	result := make(DomainStat, len(u))
 
-	start += len(key)
-	end := bytes.IndexByte(line[start:], '"')
-	if end == -1 {
-		return ""
+	for _, user := range u {
+		if idx := strings.Index(user.Email, "@"); idx != -1 {
+			domainPart := strings.ToLower(user.Email[idx+1:])
+			if strings.Contains(domainPart, domain) {
+				result[domainPart]++
+			}
+		}
 	}
-
-	return string(line[start : start+end])
-}
-
-func getDomainPart(email string) string {
-	at := strings.LastIndexByte(email, '@')
-	if at == -1 {
-		return ""
-	}
-	return strings.ToLower(email[at+1:])
+	return result, nil
 }
