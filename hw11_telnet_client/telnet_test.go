@@ -62,4 +62,69 @@ func TestTelnetClient(t *testing.T) {
 
 		wg.Wait()
 	})
+
+	t.Run("timeout", func(t *testing.T) {
+		l, err := net.Listen("tcp", "127.0.0.1:")
+		require.NoError(t, err)
+		defer func() { require.NoError(t, l.Close()) }()
+
+		in := &bytes.Buffer{}
+		out := &bytes.Buffer{}
+
+		client := NewTelnetClient(l.Addr().String(), time.Nanosecond, io.NopCloser(in), out)
+		require.Error(t, client.Connect())
+	})
+
+	t.Run("ctrl+d", func(t *testing.T) {
+		l, err := net.Listen("tcp", "127.0.0.1:")
+		require.NoError(t, err)
+		defer func() { require.NoError(t, l.Close()) }()
+
+		in := &bytes.Buffer{}
+		out := &bytes.Buffer{}
+
+		client := NewTelnetClient(l.Addr().String(), time.Second, io.NopCloser(in), out)
+		require.NoError(t, client.Connect())
+
+		in.Write([]byte(""))
+		err1 := client.Send()
+		require.Error(t, err1)
+		require.Equal(t, err1, io.EOF)
+	})
+
+	t.Run("ctrl+c", func(t *testing.T) {
+		l, err := net.Listen("tcp", "127.0.0.1:")
+		require.NoError(t, err)
+		defer func() { require.NoError(t, l.Close()) }()
+
+		in := &bytes.Buffer{}
+		out := &bytes.Buffer{}
+
+		client := NewTelnetClient(l.Addr().String(), time.Second, io.NopCloser(in), out)
+		require.NoError(t, client.Connect())
+
+		in.Write([]byte("^С")) //Не понял как отправить сигнал SIGINT.
+		err1 := client.Send()
+		require.Error(t, err1)
+	})
+
+	t.Run("server interrupt", func(t *testing.T) {
+		l, err := net.Listen("tcp", "127.0.0.1:")
+		require.NoError(t, err)
+
+		in := &bytes.Buffer{}
+		out := &bytes.Buffer{}
+
+		client := NewTelnetClient(l.Addr().String(), time.Second, io.NopCloser(in), out)
+		require.NoError(t, client.Connect())
+
+		in.Write([]byte("hello\n"))
+		err1 := client.Send()
+		require.NoError(t, err1)
+
+		require.NoError(t, l.Close())
+
+		err = client.Receive()
+		require.Error(t, err)
+	})
 }
