@@ -25,11 +25,10 @@ type telnetClient struct {
 
 func NewTelnetClient(address string, timeout time.Duration, in io.ReadCloser, out io.Writer) TelnetClient {
 	return &telnetClient{
-		address:    address,
-		timeout:    timeout,
-		connection: nil,
-		in:         in,
-		out:        out,
+		address: address,
+		timeout: timeout,
+		in:      in,
+		out:     out,
 	}
 }
 
@@ -43,6 +42,9 @@ func (v *telnetClient) Connect() error {
 }
 
 func (v *telnetClient) Close() error {
+	if err := v.in.Close(); err != nil {
+		log.Fatal("could not closed readerclosed")
+	}
 	return v.connection.Close()
 }
 
@@ -58,9 +60,8 @@ func (v *telnetClient) Send() error {
 
 	if err := scanner.Err(); err != nil {
 		return err
-	} else {
-		return io.EOF
 	}
+	return io.EOF
 }
 
 func (v *telnetClient) Receive() error {
@@ -75,7 +76,6 @@ func (v *telnetClient) Receive() error {
 
 	if err := scanner.Err(); err != nil {
 		return err
-	} else {
-		return io.EOF
 	}
+	return io.EOF
 }

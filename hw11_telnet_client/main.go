@@ -7,49 +7,42 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"os"
 	"os/signal"
-	"syscall"
 	"time"
 )
 
-var ErrCouldNotConnectToServer error = errors.New("could not connect to server")
-
-const (
-	signalCTRL_D = iota
-	signalServerInterrupt
+var (
+	ErrCouldNotConnectToServer = errors.New("could not connect to server")
+	verboseFlag                bool
+	timeoutFlag                time.Duration
 )
 
-var verboseFlag bool
-var timeoutFlag time.Duration
-
-func init() {
+func main() {
 	flag.DurationVar(&timeoutFlag, "timeout", time.Second*10, "timeout in seconds")
 	flag.BoolVar(&verboseFlag, "v", false, "v")
-}
-
-func main() {
 	flag.Parse()
 
-	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 
 	args := flag.Args()
-
 	if len(args) < 2 {
-		log.Fatal("usage: go run main.go <host> <port>")
+		log.Fatal("usage: go run main.go [--timeout=10s] [-v] <host> <port>")
 	}
 
-	tClient := NewTelnetClient(args[0]+":"+args[1], timeoutFlag, os.Stdin, os.Stdout)
+	tClient := NewTelnetClient(net.JoinHostPort(args[0], args[1]), timeoutFlag, os.Stdin, os.Stdout)
 
 	err := tClient.Connect()
+
 	if err != nil {
 		fmt.Println(ErrCouldNotConnectToServer)
 		return
 	}
+	fmt.Println("connected")
 
-	customSignal := make(chan int, 1)
-	serverNotRespondSignal := make(chan int, 1)
+	EOFSignal := make(chan byte, 1)
+	serverNotRespondSignal := make(chan byte, 1)
 
 	go func() {
 		for {
@@ -57,20 +50,13 @@ func main() {
 			case <-ctx.Done():
 				return
 			default:
-				select {
-				case <-serverNotRespondSignal:
-					log.Fatal("server not responding")
-					return
-				default:
-					err = tClient.Send()
-					if err != nil {
-						if err == io.EOF {
-							customSignal <- signalCTRL_D
-							return
-						}
-						log.Fatal(err)
-						continue
+				err = tClient.Send()
+				if err != nil {
+					if err == io.EOF {
+						close(EOFSignal)
+						return
 					}
+					log.Fatal(err)
 				}
 			}
 		}
@@ -85,24 +71,28 @@ func main() {
 				err = tClient.Receive()
 				if err != nil {
 					if err == io.EOF {
-						serverNotRespondSignal <- signalServerInterrupt
+						close(serverNotRespondSignal)
 						return
 					}
 					log.Fatal(err)
-					continue
 				}
 			}
 		}
 	}()
 
-	ctx, _ = signal.NotifyContext(ctx, syscall.SIGINT)
 	select {
-	case s := <-customSignal:
-		if s == signalCTRL_D {
-			log.Fatal("program exited with CTRL+D")
-		}
+	case <-serverNotRespondSignal:
+		fmt.Print("server not responding")
+		break
 	case <-ctx.Done():
-		log.Fatal("program exited CTRL+C")
+		fmt.Print("program exited CTRL+C")
+		break
+	case <-EOFSignal:
+		fmt.Print("program exited with CTRL+D")
+		break
+	case <-serverNotRespondSignal:
+		fmt.Print("server not respond")
+		break
 	}
 	cancel()
 	tClient.Close()
