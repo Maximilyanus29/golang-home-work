@@ -2,33 +2,58 @@ package main
 
 import (
 	"context"
-	"flag"
+	"errors"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/app"
-	"github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/logger"
-	internalhttp "github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/server/http"
-	memorystorage "github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/storage/memory"
+	"github.com/Maximilyanus29/golang-home-work/hw12_13_14_15_calendar/internal/app"
+	"github.com/Maximilyanus29/golang-home-work/hw12_13_14_15_calendar/internal/config"
+	"github.com/Maximilyanus29/golang-home-work/hw12_13_14_15_calendar/internal/logger"
+	internalhttp "github.com/Maximilyanus29/golang-home-work/hw12_13_14_15_calendar/internal/server/http"
+	memorystorage "github.com/Maximilyanus29/golang-home-work/hw12_13_14_15_calendar/internal/storage/memory"
+	"github.com/spf13/cobra"
 )
 
-var configFile string
+var (
+	Verbose           bool
+	CfgFile           string
+	ErrConfigIsNotSet = errors.New("config is not set")
 
-func init() {
-	flag.StringVar(&configFile, "config", "/etc/calendar/config.toml", "Path to configuration file")
-}
+	rootCmd = &cobra.Command{
+		Use:   "calendar",
+		Short: `Сервис "Календарь" представляет собой максимально упрощенный сервис для хранения календарных событий и отправки уведомлений.`,
+		Long: `Сервис предполагает возможность:
+* добавить/обновить событие;
+* получить список событий на день/неделю/месяц;
+* получить уведомление за N дней до события.
+
+Сервис НЕ предполагает:
+* авторизации;
+* разграничения доступа;
+* web-интерфейса.`,
+		Run: runRootCMD,
+	}
+	versionCmd = &cobra.Command{
+		Use:   "version",
+		Short: "Print the version number of Hugo",
+		Long:  `All software has versions. This is Hugo's`,
+		Run: func(cmd *cobra.Command, args []string) {
+			printVersion()
+		},
+	}
+)
 
 func main() {
-	flag.Parse()
+	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
+	rootCmd.Flags().StringVar(&CfgFile, "config", "../../configs/config.toml", "Path to configuration file default: ../../config/config.toml")
+	rootCmd.AddCommand(versionCmd)
+	rootCmd.Execute()
+}
 
-	if flag.Arg(0) == "version" {
-		printVersion()
-		return
-	}
-
-	config := NewConfig()
+func runRootCMD(cmd *cobra.Command, args []string) {
+	config := config.NewConfig(CfgFile)
 	logg := logger.New(config.Logger.Level)
 
 	storage := memorystorage.New()
