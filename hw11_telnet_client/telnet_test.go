@@ -88,7 +88,7 @@ func TestTelnetClient(t *testing.T) {
 
 		in.Write([]byte(""))
 		err1 := client.Send()
-		require.Error(t, err1)
+		require.NoError(t, err1)
 	})
 
 	t.Run("server interrupt", func(t *testing.T) {

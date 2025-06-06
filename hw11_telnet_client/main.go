@@ -5,7 +5,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"os"
@@ -34,12 +33,10 @@ func main() {
 	tClient := NewTelnetClient(net.JoinHostPort(args[0], args[1]), timeoutFlag, os.Stdin, os.Stdout)
 
 	err := tClient.Connect()
-
 	if err != nil {
 		fmt.Println(ErrCouldNotConnectToServer)
 		return
 	}
-	fmt.Println("connected")
 
 	EOFSignal := make(chan byte, 1)
 	serverNotRespondSignal := make(chan byte, 1)
@@ -52,12 +49,10 @@ func main() {
 			default:
 				err = tClient.Send()
 				if err != nil {
-					if err == io.EOF {
-						close(EOFSignal)
-						return
-					}
 					log.Fatal(err)
 				}
+				close(EOFSignal)
+				return
 			}
 		}
 	}()
@@ -70,20 +65,15 @@ func main() {
 			default:
 				err = tClient.Receive()
 				if err != nil {
-					if err == io.EOF {
-						close(serverNotRespondSignal)
-						return
-					}
 					log.Fatal(err)
 				}
+				close(serverNotRespondSignal)
+				return
 			}
 		}
 	}()
 
 	select {
-	case <-serverNotRespondSignal:
-		fmt.Print("server not responding")
-		break
 	case <-ctx.Done():
 		fmt.Print("program exited CTRL+C")
 		break

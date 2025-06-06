@@ -50,32 +50,49 @@ func (v *telnetClient) Close() error {
 
 func (v *telnetClient) Send() error {
 	scanner := bufio.NewScanner(v.in)
-	if scanner.Scan() {
-		n, err := v.connection.Write(append(scanner.Bytes(), '\n'))
-		if verboseFlag {
-			log.Printf("передано %d байт\n", n)
+	for scanner.Scan() {
+		_, err := v.connection.Write(append(scanner.Bytes(), '\n'))
+		if err != nil {
+			return err
 		}
-		return err
+		// Обработка строки
 	}
-
 	if err := scanner.Err(); err != nil {
 		return err
 	}
-	return io.EOF
+	return nil
+
+	// EOF здесь обрабатывается автоматически
 }
 
 func (v *telnetClient) Receive() error {
 	scanner := bufio.NewScanner(v.connection)
-	if scanner.Scan() {
-		n, err := v.out.Write(append(scanner.Bytes(), '\n'))
-		if verboseFlag {
-			log.Printf("получено %d байт\n", n)
+	for scanner.Scan() {
+		_, err := v.out.Write(append(scanner.Bytes(), '\n'))
+		if err != nil {
+			return err
 		}
-		return err
+		// Обработка строки
 	}
-
 	if err := scanner.Err(); err != nil {
+		// Обработка ошибок (кроме EOF)
 		return err
 	}
-	return io.EOF
+	return nil
+}
+
+func ReadAllCustom(r io.Reader) ([]byte, error) {
+	b := make([]byte, 0, 512)
+	for {
+		n, err := r.Read(b[len(b):cap(b)])
+		b = b[:len(b)+n]
+		if err != nil {
+			return b, err
+		}
+
+		if len(b) == cap(b) {
+			// Add more capacity (let append pick how much).
+			b = append(b, 0)[:len(b)]
+		}
+	}
 }
