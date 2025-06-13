@@ -32,3 +32,4 @@ fileEquals /tmp/telnet.out "${expected_telnet_out}"
 
 rm -f go-telnet
 echo "PASS"
+ 
