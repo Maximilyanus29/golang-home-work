@@ -61,8 +61,6 @@ func (v *telnetClient) Send() error {
 		return err
 	}
 	return nil
-
-	// EOF здесь обрабатывается автоматически
 }
 
 func (v *telnetClient) Receive() error {
@@ -72,10 +70,8 @@ func (v *telnetClient) Receive() error {
 		if err != nil {
 			return err
 		}
-		// Обработка строки
 	}
 	if err := scanner.Err(); err != nil {
-		// Обработка ошибок (кроме EOF)
 		return err
 	}
 	return nil

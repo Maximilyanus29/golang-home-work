@@ -75,13 +75,13 @@ func main() {
 
 	select {
 	case <-ctx.Done():
-		fmt.Print("program exited CTRL+C")
+		log.Print("program exited CTRL+C")
 		break
 	case <-EOFSignal:
-		fmt.Print("program exited with CTRL+D")
+		log.Print("program exited with CTRL+D")
 		break
 	case <-serverNotRespondSignal:
-		fmt.Print("server not respond")
+		log.Print("server not respond")
 		break
 	}
 	cancel()
