@@ -1,3 +1,7 @@
 [logger]
-level = "INFO"
+level = "DEBUG"
 
+[storage]
+type = "memory"
+dsn-postgres = "user=foo dbname=calendar sslmode=disable"
+dsn-postgres-test = "user=postgres dbname=calendar_test sslmode=disable password=postgres"

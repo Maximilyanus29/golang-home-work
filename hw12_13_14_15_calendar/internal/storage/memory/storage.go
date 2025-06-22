@@ -60,7 +60,7 @@ func (s *Storage) ListEventsByDate(ctx context.Context, date time.Time) ([]stora
 	defer s.mu.RUnlock()
 	var events []storage.Event
 	for _, e := range s.Events {
-		if e.Date == date {
+		if e.DateStart == date {
 			events = append(events, e)
 		}
 	}

@@ -1,32 +1,45 @@
 package config
 
 import (
-	"log"
-	"path"
+	"os"
 
 	"github.com/spf13/viper"
 )
 
 type Config struct {
-	Logger LoggerConf
+	Logger  LoggerConf
+	Server  ServerConf
+	Storage StorageConf
 }
 
 type LoggerConf struct {
 	Level string
 }
 
-func NewConfig(cfgFile string) Config {
-	viper.SetConfigName("config")          // name of config file (without extension)
-	viper.SetConfigType("toml")            // REQUIRED if the config file does not have the extension in the name
-	viper.AddConfigPath(path.Dir(cfgFile)) // path to look for the config file in
-	err := viper.ReadInConfig()            // Find and read the config file
-	if err != nil {                        // Handle errors reading the config file
-		log.Printf("fatal error config file: %s", err)
-	}
+type ServerConf struct {
+	Host string
+	Port string
+}
 
+type StorageConf struct {
+	Type            string
+	DsnPostgres     string
+	DsnPostgresTest string
+}
+
+func NewConfig() Config {
 	return Config{
 		Logger: LoggerConf{
 			Level: viper.GetString("logger.level"),
+		},
+		Server: ServerConf{
+			Host: os.Getenv("HOST"),
+			Port: os.Getenv("PORT"),
+		},
+		Storage: StorageConf{
+			Type:            viper.GetString("storage.type"),
+			DsnPostgres:     viper.GetString("storage.dsn-postgres"),
+			DsnPostgresTest: viper.GetString("storage.dsn-postgres-test"),
 		},
 	}
 }

@@ -7,12 +7,17 @@ import (
 )
 
 var ErrEventNotFound = errors.New("event not found")
-var ErrEventBusy = errors.New("event date busy")
+var ErrEventDateBusy = errors.New("event date busy")
+var ErrEventIdBusy = errors.New("event id busy")
 
 type Event struct {
-	ID    string
-	Title string
-	Date  time.Time
+	ID               int       `db:"id"`
+	Title            string    `db:"title"`
+	DateStart        time.Time `db:"date_start"`
+	DateEnd          time.Time `db:"date_end"`
+	Description      string    `db:"descr"`
+	OwnerId          int       `db:"owner_id"`
+	TimeBeforeNotify int       `db:"time_before_notify"`
 }
 
 type StorageEvent interface {
