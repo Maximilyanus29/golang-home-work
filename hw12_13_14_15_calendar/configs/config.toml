@@ -1,7 +1,12 @@
 [logger]
-level = "DEBUG"
+log_level="DEBUG"
+type="file"
+file-path="/var/log/calendar.log"
 
 [storage]
 type = "memory"
-dsn-postgres = "user=foo dbname=calendar sslmode=disable"
-dsn-postgres-test = "user=postgres dbname=calendar_test sslmode=disable password=postgres"
+dsn-postgres="user=foo dbname=calendar sslmode=disable"
+
+[http]
+host="localhost"
+port=8080

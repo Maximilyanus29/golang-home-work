@@ -5,19 +5,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Maximilyanus29/golang-home-work/hw12_13_14_15_calendar/internal/app"
 	"github.com/Maximilyanus29/golang-home-work/hw12_13_14_15_calendar/internal/storage"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSqlStorage(t *testing.T) {
-	print(app.GetRootDir())
 	viper.SetConfigFile("../../../configs/config.toml")
 	err := viper.ReadInConfig()
 	require.NoError(t, err)
 
-	//do events table clear
 	ctx := context.Background()
 	s := New()
 	err = s.Connect(ctx, viper.GetString("storage.dsn-postgres-test"))
@@ -33,7 +30,7 @@ func TestSqlStorage(t *testing.T) {
 		DateStart:        tt,
 		DateEnd:          time.Now(),
 		Description:      "fasfa",
-		OwnerId:          1,
+		OwnerID:          1,
 		TimeBeforeNotify: 0,
 	}
 

@@ -2,20 +2,16 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/Maximilyanus29/golang-home-work/hw12_13_14_15_calendar/internal/storage"
 )
 
-func GetRootDir() string {
-	ex, err := os.Executable()
-	if err != nil {
-		panic(err)
-	}
-	exPath := filepath.Dir(ex)
-	return exPath + "../"
+func Exit(format string, a ...any) {
+	fmt.Fprintf(os.Stderr, format, a...)
+	os.Exit(1)
 }
 
 type App struct {
@@ -39,7 +35,10 @@ type Storage interface {
 }
 
 func New(logger Logger, storage Storage) *App {
-	return &App{}
+	return &App{
+		logger:  logger,
+		storage: storage,
+	}
 }
 
 func (a *App) CreateEvent(ctx context.Context, event storage.Event) error {

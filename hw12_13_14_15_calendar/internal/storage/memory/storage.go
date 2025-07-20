@@ -21,6 +21,14 @@ func New() *Storage {
 func (s *Storage) CreateEvent(ctx context.Context, event storage.Event) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	for _, e := range s.Events {
+		if e.ID == event.ID {
+			return storage.ErrEventIDBusy
+		}
+		if e.DateStart == event.DateStart {
+			return storage.ErrEventDateBusy
+		}
+	}
 	s.Events = append(s.Events, event)
 	return nil
 }
@@ -63,6 +71,9 @@ func (s *Storage) ListEventsByDate(ctx context.Context, date time.Time) ([]stora
 		if e.DateStart == date {
 			events = append(events, e)
 		}
+	}
+	if len(events) == 0 {
+		return events, storage.ErrEventNotFound
 	}
 	return events, nil
 }

@@ -14,13 +14,13 @@ func TestStorage(t *testing.T) {
 		ctx := context.Background()
 		s := New()
 		event := storage.Event{
-			ID:               "1",
-			Title:            "1",
+			ID:               12,
+			Title:            "gasg",
 			DateStart:        time.Now(),
 			DateEnd:          time.Now(),
 			Description:      "fgasfas",
 			OwnerId:          1,
-			TimeBeforeNotify: time.Now(),
+			TimeBeforeNotify: 10,
 		}
 
 		err := s.CreateEvent(ctx, event)
@@ -35,13 +35,13 @@ func TestStorage(t *testing.T) {
 		ctx := context.Background()
 		s := New()
 		event := storage.Event{
-			ID:               "1",
-			Title:            "1",
+			ID:               1,
+			Title:            "asd",
 			DateStart:        time.Now(),
 			DateEnd:          time.Now(),
 			Description:      "fgasfas",
 			OwnerId:          1,
-			TimeBeforeNotify: time.Now(),
+			TimeBeforeNotify: 1,
 		}
 
 		err := s.CreateEvent(ctx, event)
@@ -66,13 +66,13 @@ func TestStorage(t *testing.T) {
 		ctx := context.Background()
 		s := New()
 		event := storage.Event{
-			ID:               "1",
+			ID:               1,
 			Title:            "1",
 			DateStart:        time.Now(),
 			DateEnd:          time.Now(),
 			Description:      "fgasfas",
 			OwnerId:          1,
-			TimeBeforeNotify: time.Now(),
+			TimeBeforeNotify: 1,
 		}
 
 		err := s.CreateEvent(ctx, event)
@@ -95,13 +95,13 @@ func TestStorage(t *testing.T) {
 		ctx := context.Background()
 		s := New()
 		event := storage.Event{
-			ID:               "1",
+			ID:               1,
 			Title:            "1",
 			DateStart:        time.Now(),
 			DateEnd:          time.Now(),
 			Description:      "fgasfas",
 			OwnerId:          1,
-			TimeBeforeNotify: time.Now(),
+			TimeBeforeNotify: 1,
 		}
 
 		err := s.CreateEvent(ctx, event)

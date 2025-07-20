@@ -41,12 +41,12 @@ func (s *Storage) CreateEvent(ctx context.Context, event storage.Event) error {
 }
 
 func (s *Storage) UpdateEvent(ctx context.Context, event storage.Event) error {
-	_, err := s.conn.ExecContext(ctx, "update events set title = $1, date_start = $2, date_end = $3, descr = $4, owner_id = $5, time_before_notify = $6",
+	_, err := s.conn.ExecContext(ctx, "update events set title = $1, date_start = $2, date_end = $3, descr = $4, owner_id = $5, time_before_notify = $6", //nolint
 		event.Title,
 		event.DateStart,
 		event.DateEnd,
 		event.Description,
-		event.OwnerId,
+		event.OwnerID,
 		event.TimeBeforeNotify,
 	)
 	return err

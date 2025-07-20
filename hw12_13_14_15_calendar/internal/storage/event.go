@@ -8,7 +8,7 @@ import (
 
 var ErrEventNotFound = errors.New("event not found")
 var ErrEventDateBusy = errors.New("event date busy")
-var ErrEventIdBusy = errors.New("event id busy")
+var ErrEventIDBusy = errors.New("event id busy")
 
 type Event struct {
 	ID               int       `db:"id"`
@@ -16,7 +16,7 @@ type Event struct {
 	DateStart        time.Time `db:"date_start"`
 	DateEnd          time.Time `db:"date_end"`
 	Description      string    `db:"descr"`
-	OwnerId          int       `db:"owner_id"`
+	OwnerID          int       `db:"owner_id"`
 	TimeBeforeNotify int       `db:"time_before_notify"`
 }
 
