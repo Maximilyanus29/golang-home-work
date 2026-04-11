@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -12,6 +13,7 @@ import (
 	"github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/logger"
 	internalhttp "github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/server/http"
 	memorystorage "github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/storage/memory"
+	"github.com/spf13/viper"
 )
 
 var configFile string
@@ -22,6 +24,8 @@ func init() {
 
 func main() {
 	flag.Parse()
+
+	initConfig()
 
 	if flag.Arg(0) == "version" {
 		printVersion()
@@ -58,4 +62,25 @@ func main() {
 		cancel()
 		os.Exit(1) //nolint:gocritic
 	}
+}
+
+func initConfig() {
+	if configFile != "" {
+		// Используем файл конфигурации из флага.
+		viper.SetConfigFile(configFile)
+
+		if err := viper.ReadInConfig(); err == nil {
+			fmt.Println("Использование файла конфигурации:", viper.ConfigFileUsed())
+		} else {
+			panic(123)
+
+			fmt.Println("Не удалось получить конфигуарцию")
+
+		}
+	} else {
+		panic(123)
+		fmt.Println("Необходимо передать кронфигурацию")
+	}
+
+	viper.AutomaticEnv()
 }
