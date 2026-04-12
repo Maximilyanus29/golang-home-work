@@ -36,7 +36,12 @@ func main() {
 	logg := logger.New(config.Logger.Level)
 
 	storage := memorystorage.New()
-	calendar := app.New(logg, storage)
+
+	calendar, err := app.New(logg, storage)
+	if err != nil {
+		logg.Error("failed to start app: " + err.Error())
+		os.Exit(1)
+	}
 
 	server := internalhttp.NewServer(logg, calendar)
 

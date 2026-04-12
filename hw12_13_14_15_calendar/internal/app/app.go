@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/storage"
 )
@@ -14,10 +15,10 @@ type App struct {
 }
 
 type Logger interface {
-	Debug(msg string)
-	Info(msg string)
-	Error(msg string)
-	Warning(msg string)
+	Debug(msg ...string)
+	Info(msg ...string)
+	Error(msg ...string)
+	Warning(msg ...string)
 }
 
 type Storage interface {
@@ -44,7 +45,7 @@ func (a *App) CreateEvent(ctx context.Context, event *storage.Event) error {
 
 	err := a.storage.CreateEvent(ctx, event)
 	if err != nil {
-		a.logger.Error("Failed to create event", "error", err, "id", event.ID)
+		a.logger.Error("Failed to create event", "error", err.Error(), "id", event.ID)
 		return fmt.Errorf("create event: %w", err)
 	}
 
@@ -57,11 +58,11 @@ func (a *App) GetEvents(ctx context.Context) ([]*storage.Event, error) {
 
 	events, err := a.storage.GetEvents(ctx)
 	if err != nil {
-		a.logger.Error("Failed to get events", "error", err)
+		a.logger.Error("Failed to get events", "error", err.Error())
 		return nil, fmt.Errorf("get events: %w", err)
 	}
 
-	a.logger.Debug("Events retrieved", "count", len(events))
+	a.logger.Debug("Events retrieved", "count", strconv.Itoa(len(events)))
 	return events, nil
 }
 
@@ -70,7 +71,7 @@ func (a *App) EditEvent(ctx context.Context, event *storage.Event) error {
 
 	err := a.storage.EditEvent(ctx, event)
 	if err != nil {
-		a.logger.Error("Failed to edit event", "error", err, "id", event.ID)
+		a.logger.Error("Failed to edit event", "error", err.Error(), "id", event.ID)
 		return fmt.Errorf("edit event: %w", err)
 	}
 
@@ -83,7 +84,7 @@ func (a *App) DeleteEvent(ctx context.Context, id string) error {
 
 	err := a.storage.DeleteEvent(ctx, id)
 	if err != nil {
-		a.logger.Error("Failed to delete event", "error", err, "id", id)
+		a.logger.Error("Failed to delete event", "error", err.Error(), "id", id)
 		return fmt.Errorf("delete event: %w", err)
 	}
 

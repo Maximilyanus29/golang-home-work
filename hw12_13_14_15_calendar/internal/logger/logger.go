@@ -3,6 +3,7 @@ package logger
 import (
 	"fmt"
 	"slices"
+	"strings"
 )
 
 type Logger struct {
@@ -15,7 +16,7 @@ func New(level string) *Logger {
 	}
 }
 
-func (l Logger) Debug(msg string) {
+func (l Logger) Debug(msg ...string) {
 	if slices.Contains([]string{"DEBUG"}, l.Level) {
 		fmt.Println(format(msg, l.Level))
 
@@ -23,27 +24,34 @@ func (l Logger) Debug(msg string) {
 
 }
 
-func (l Logger) Info(msg string) {
+func (l Logger) Info(msg ...string) {
 	if slices.Contains([]string{"INFO", "DEBUG"}, l.Level) {
 		fmt.Println(format(msg, l.Level))
 
 	}
 }
 
-func (l Logger) Error(msg string) {
+func (l Logger) Error(msg ...string) {
 	if slices.Contains([]string{"INFO", "DEBUG", "ERROR"}, l.Level) {
 		fmt.Println(format(msg, l.Level))
 
 	}
 }
 
-func (l Logger) Warning(msg string) {
+func (l Logger) Warning(msg ...string) {
 	if slices.Contains([]string{"INFO", "DEBUG", "ERROR", "WARNING"}, l.Level) {
 		fmt.Println(format(msg, l.Level))
 	}
 }
 
-func format(msg string, level string) string {
-	return level + ": " + msg
-
+func format(msg []string, level string) string {
+	var builder strings.Builder
+	builder.WriteString(level)
+	builder.WriteRune(':')
+	builder.WriteRune(' ')
+	for _, v := range msg {
+		builder.WriteString(v)
+		builder.WriteRune(' ')
+	}
+	return builder.String()
 }
